@@ -150,9 +150,13 @@ app.registerExtension({
         console.log("Load from DB", node);
       }
 
+      node.onConnectionsChange = updateAllNodes;
+
       const textWidget = node.widgets.find(function(item) {
         return item.name === "text";
       });
+
+      textWidget.element.addEventListener("change", updateAllNodes);
 
       const previewWidget = node.widgets.find(function(item) {
         return item.name === "preview";
@@ -166,39 +170,54 @@ app.registerExtension({
         }
 
         previewWidget.dynamicPrompts = false;
-        // default dynamic prompt
-        previewWidget.serializeValue = (workflowNode, widgetIndex) => {
-					let prompt = stripComments(textWidget.value);
-					while (prompt.replace("\\{", "").includes("{") && prompt.replace("\\}", "").includes("}")) {
-						const startIndex = prompt.replace("\\{", "00").indexOf("{");
-						const endIndex = prompt.replace("\\}", "00").indexOf("}");
-
-						const optionsString = prompt.substring(startIndex + 1, endIndex);
-						const options = optionsString.split("|");
-
-						const randomIndex = Math.floor(Math.random() * options.length);
-						let randomOption = options[randomIndex];
-
-            // parse option
-            if (db.exists(randomOption.trim())) {
-              const values = db.get(randomOption.trim());
-              const valueIndex = Math.floor(Math.random() * values.length);
-              randomOption = values[valueIndex];
-            }
-
-						prompt = prompt.substring(0, startIndex) + randomOption + prompt.substring(endIndex + 1);
-					}
-
-          // set hidden widget value
-          previewWidget.value = prompt;
-
-					// Overwrite the value in the serialized workflow pnginfo
-					if (workflowNode?.widgets_values)
-						workflowNode.widgets_values[widgetIndex] = prompt;
-
-					return prompt;
-				};
       }
     }
-  }    
+  }
 });
+
+// update preview widget value
+function updateAllNodes() {
+  for (const node of app.graph._nodes) {
+    if (node.comfyClass === "Load from DB") {
+      if (DEBUG) {
+        console.log("Load from DB", node);
+      }
+
+      const textWidget = node.widgets.find(function(item) {
+        return item.name === "text";
+      });
+
+      // const previewWidget = node.widgets.find(function(item) {
+      //   return item.name === "preview";
+      // });
+
+      let prompt = stripComments(textWidget.value);
+      let count = 0;
+      while (prompt.replace("\\{", "").includes("{") && prompt.replace("\\}", "").includes("}") && count < 10) {
+        const startIndex = prompt.replace("\\{", "00").indexOf("{");
+        const endIndex = prompt.replace("\\}", "00").indexOf("}");
+
+        const optionsString = prompt.substring(startIndex + 1, endIndex);
+        const options = optionsString.split("|");
+
+        const randomIndex = Math.floor(Math.random() * options.length);
+        let randomOption = options[randomIndex];
+
+        // parse option
+        if (db.exists(randomOption.trim())) {
+          const values = db.get(randomOption.trim());
+          const valueIndex = Math.floor(Math.random() * values.length);
+          randomOption = values[valueIndex];
+        }
+
+        prompt = prompt.substring(0, startIndex) + randomOption + prompt.substring(endIndex + 1);
+      }
+
+      node.widgets[0].value = prompt; // previewWidget
+      node.widgets_values[0] = prompt;
+      count++;
+    }
+  }
+}
+
+api.addEventListener("promptQueued", updateAllNodes);
