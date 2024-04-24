@@ -19,4 +19,4 @@ e.g. {key} => choose random value in multiple values
 
 ## References
 
-### [ComfyUI-Custom-Scripts](https://github.com/pythongosssss/ComfyUI-Custom-Scripts)
+- [ComfyUI-Custom-Scripts](https://github.com/pythongosssss/ComfyUI-Custom-Scripts)
