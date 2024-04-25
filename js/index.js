@@ -10,7 +10,8 @@ let db = new KeyValues();
 $el("style", {
 	textContent: `
 	.shinich39-hidden { display: none; }
-	.shinich39-info { font-size: 10px; font-weight: 400; font-family: monospace; overflow-y: auto; margin: 0; }
+	.shinich39-info { font-size: 10px; font-weight: 400; font-family: monospace; overflow-y: auto; overflow-wrap: break-word; margin: 0; white-space: pre-line; }
+	.shinich39-row { background-color: #222; padding: 2px; color: #ddd; margin-bottom: 1rem; }
   `,
 	parent: document.body,
 });
@@ -46,9 +47,7 @@ async function save(key, value, element) {
 
 		if (response.status === 200) {
       db.set(key, value);
-      if (element) {
-        element.innerHTML = JSON.stringify(value, null, 2);
-      }
+      render(key, element);
 			return true;
 		}
 
@@ -56,6 +55,23 @@ async function save(key, value, element) {
 	} catch (error) {
 		console.error(error);
 	}
+}
+
+function render(key, element) {
+  if (element) {
+    element.innerHTML = "";
+    if (key) {
+      const values = db.get(key);
+      if (values && Array.isArray(values)) {
+        for (let i = 0; i < values.length; i++) {
+          const row = document.createElement("div");
+          row.classList.add("shinich39-row");
+          row.innerHTML = values[i];
+          element.appendChild(row);
+        }
+      }
+    }
+  }
 }
 
 app.registerExtension({
@@ -82,9 +98,7 @@ app.registerExtension({
 
                 if (keyWidget && previewWidget) {
                   const key = keyWidget.value;
-                  const value = db.get(key);
-                  const previewElement = previewWidget.element;
-                  previewElement.innerHTML = JSON.stringify(value, null, 2);
+                  render(key, previewWidget.element);
                 }
               } catch(err) {
                 console.error(err);
@@ -105,9 +119,8 @@ app.registerExtension({
         console.log("Save to DB", node);
       }
 
-      const container = document.createElement("pre");
+      const container = document.createElement("div");
       container.classList.add("shinich39-info");
-      container.innerHTML = "[]";
 
       const textWidget = node.widgets.find(function(item) {
         return item.name === "text";
@@ -117,8 +130,7 @@ app.registerExtension({
       }
 
       const keyWidget = node.addWidget("text", "key", "", function(key) {
-        let value = db.get(key);
-        container.innerHTML = JSON.stringify(value, null, 2);
+        render(key, container);
       });
 
       node.addWidget("button", "Add", "Add", function() {
