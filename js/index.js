@@ -11,7 +11,8 @@ $el("style", {
 	textContent: `
 	.shinich39-hidden { display: none; }
 	.shinich39-info { font-size: 10px; font-weight: 400; font-family: monospace; overflow-y: auto; overflow-wrap: break-word; margin: 0; white-space: pre-line; }
-	.shinich39-box { background-color: #222; padding: 2px; color: #ddd; margin-bottom: 1rem; }
+	.shinich39-label { margin: 0.5rem 0; }
+	.shinich39-box { background-color: #222; padding: 2px; color: #ddd; }
   `,
 	parent: document.body,
 });
@@ -31,42 +32,41 @@ async function load() {
   }
 }
 
-async function save(key, value, element) {
-	try {
-		const response = await api.fetchApi("/shinich39/db", {
-			method: "POST",
-			headers: {
-				"Content-Type": "application/json",
-			},
-			body: JSON.stringify({key, value}),
-		});
+async function save(key, value) {
+  const response = await api.fetchApi("/shinich39/db", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({key, value}),
+  });
 
-    if (DEBUG) {
-      console.log("POST /shinich39/db", response);
-    }
+  if (DEBUG) {
+    console.log("POST /shinich39/db", response);
+  }
 
-		if (response.status === 200) {
-      db.set(key, value);
-      render(key, element);
-			return true;
-		}
+  if (response.status === 200) {
+    return true;
+  }
 
-		throw new Error(response.statusText);
-	} catch (error) {
-		console.error(error);
-	}
+  throw new Error(response.statusText);
 }
 
 function render(key, element) {
   if (element) {
-    element.innerHTML = "";
+    element.innerHTML = "Double click to select all character in the box.\n";
     if (key) {
       const values = db.get(key);
       if (values && Array.isArray(values)) {
+        // element.innerHTML += `${values.length} values in ${key}`
         for (let i = 0; i < values.length; i++) {
+          const label = document.createElement("div");
+          label.classList.add("shinich39-label");
+          label.innerHTML = `${i + 1} / ${values.length}`;
           const box = document.createElement("div");
           box.classList.add("shinich39-box");
           box.innerHTML = values[i];
+          element.appendChild(label);
           element.appendChild(box);
 
           box.addEventListener("dblclick", function(e) {
@@ -153,24 +153,38 @@ app.registerExtension({
       node.addWidget("button", "Add", "Add", function() {
         let key = keyWidget.value.trim();
         let prevValue = db.get(key);
-        let value = textWidget.value;
+        let value = prevValue.concat([textWidget.value]);
 
         if (key === "") {
           throw new Error("Key cannot be empty.");
         }
   
-        save(key, prevValue.concat([value]), container);
+        save(key, value)
+          .then(function() {
+            db.set(key, value);
+            render(key, container);
+          })
+          .catch(function(err) {
+            console.error(err);
+          });
       });
   
       node.addWidget("button", "Set", "Set", function() {
         let key = keyWidget.value.trim();
-        let value = textWidget.value;
+        let value = [textWidget.value];
   
         if (key === "") {
           throw new Error("Key cannot be empty.");
         }
   
-        save(key, [value], container);
+        save(key, value)
+          .then(function() {
+            db.set(key, value);
+            render(key, container);
+          })
+          .catch(function(err) {
+            console.error(err);
+          });
       });
 
       node.addDOMWidget("preview", "customtext", container);
