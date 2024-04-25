@@ -69,7 +69,9 @@ function render(key, element) {
           box.innerHTML = values[i];
           element.appendChild(box);
 
-          box.addEventListener("click", function(e) {
+          box.addEventListener("dblclick", function(e) {
+            e.preventDefault();
+            e.stopPropagation();
             var sel, range;
             if (window.getSelection && document.createRange) {
                 range = document.createRange();
