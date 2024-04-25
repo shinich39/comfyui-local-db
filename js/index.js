@@ -130,6 +130,7 @@ app.registerExtension({
     // init
     load()
       .then(function() {
+        // render Save to DB preview widget
         try {
           for (const node of app.graph._nodes) {
             if (node.comfyClass === "Save to DB") {
@@ -158,6 +159,9 @@ app.registerExtension({
         } catch(err) {
           console.error(err);
         }
+
+        // init Load from DB text widget
+        updateAllNodes();
       })
       .catch(function(err) {
         console.error(err);
