@@ -11,7 +11,7 @@ $el("style", {
 	textContent: `
 	.shinich39-hidden { display: none; }
 	.shinich39-info { font-size: 10px; font-weight: 400; font-family: monospace; overflow-y: auto; overflow-wrap: break-word; margin: 0; white-space: pre-line; }
-	.shinich39-row { background-color: #222; padding: 2px; color: #ddd; margin-bottom: 1rem; }
+	.shinich39-box { background-color: #222; padding: 2px; color: #ddd; margin-bottom: 1rem; }
   `,
 	parent: document.body,
 });
@@ -64,10 +64,25 @@ function render(key, element) {
       const values = db.get(key);
       if (values && Array.isArray(values)) {
         for (let i = 0; i < values.length; i++) {
-          const row = document.createElement("div");
-          row.classList.add("shinich39-row");
-          row.innerHTML = values[i];
-          element.appendChild(row);
+          const box = document.createElement("div");
+          box.classList.add("shinich39-box");
+          box.innerHTML = values[i];
+          element.appendChild(box);
+
+          box.addEventListener("click", function(e) {
+            var sel, range;
+            if (window.getSelection && document.createRange) {
+                range = document.createRange();
+                range.selectNodeContents(e.target);
+                sel = window.getSelection();
+                sel.removeAllRanges();
+                sel.addRange(range);
+            } else if (document.body.createTextRange) {
+                range = document.body.createTextRange();
+                range.moveToElementText(e.target);
+                range.select();
+            }
+          });
         }
       }
     }
