@@ -13,6 +13,7 @@ $el("style", {
 	.shinich39-info { font-size: 10px; font-weight: 400; font-family: monospace; overflow-y: auto; overflow-wrap: break-word; margin: 0; white-space: pre-line; }
 	.shinich39-label { margin: 0.5rem 0; }
 	.shinich39-box { background-color: #222; padding: 2px; color: #ddd; }
+  #shinich39-keys { background-color: rgba(0,0,0,0.5); padding: 1rem; font-size: 14px; color: #ddd; line-height: 1.6; z-index: 1001; position: absolute; bottom: 0; left: 0; width: 100%; height: auto; }
   `,
 	parent: document.body,
 });
@@ -74,20 +75,52 @@ function render(key, element) {
             e.stopPropagation();
             var sel, range;
             if (window.getSelection && document.createRange) {
-                range = document.createRange();
-                range.selectNodeContents(e.target);
-                sel = window.getSelection();
-                sel.removeAllRanges();
-                sel.addRange(range);
+              range = document.createRange();
+              range.selectNodeContents(e.target);
+              sel = window.getSelection();
+              sel.removeAllRanges();
+              sel.addRange(range);
             } else if (document.body.createTextRange) {
-                range = document.body.createTextRange();
-                range.moveToElementText(e.target);
-                range.select();
+              range = document.body.createTextRange();
+              range.moveToElementText(e.target);
+              range.select();
             }
           });
         }
       }
     }
+  }
+}
+
+function showKeys() {
+  let wrapper = document.getElementById("shinich39-keys");
+  if (!wrapper) {
+    wrapper = document.createElement("div");
+    wrapper.id = "shinich39-keys";
+    wrapper.innerHTML = "LocalDB keys<br />";
+    
+    const keys = db.keys().sort(function(a, b) {
+      return a.localeCompare(b, undefined, {
+        numeric: true,
+        sensitivity: 'base',
+      });
+    });
+
+    const str = keys.map(function(key) {
+      const len = db.len(key);
+      return `${key}(${len})`;
+    }).join(", ");
+
+    wrapper.innerHTML += str;
+
+    document.body.appendChild(wrapper);
+  }
+}
+
+function hideKeys() {
+  let wrapper = document.getElementById("shinich39-keys");
+  if (wrapper) {
+    wrapper.parentNode.removeChild(wrapper);
   }
 }
 
@@ -197,6 +230,14 @@ app.registerExtension({
 
       const textWidget = node.widgets.find(function(item) {
         return item.name === "text";
+      });
+
+      textWidget.element.addEventListener("focus", function(e) {
+        showKeys();
+      });
+
+      textWidget.element.addEventListener("blur", function(e) {
+        hideKeys();
       });
 
       textWidget.element.addEventListener("change", updateAllNodes);
