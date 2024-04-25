@@ -24,15 +24,23 @@ DB_DIRECTORY = os.path.join(__DIRNAME, "./db")
 @PromptServer.instance.routes.get("/shinich39/db")
 async def get_data(req):
   obj = {}
-  for root, dirs, files in os.walk(DB_DIRECTORY):
-    for file in files:
-      if (file.lower().endswith(".json")):
+  for file in os.listdir(DB_DIRECTORY):
+    if file.lower().endswith(".json"):
         file_name = os.path.splitext(os.path.basename(file))[0]
-        file_path = os.path.join(root, file)
+        file_path = os.path.join(DB_DIRECTORY, file)
         with open(file_path, "r") as f:
           json_data = json.load(f)
           obj[file_name] = json_data
           f.close()
+  # for root, dirs, files in os.walk(DB_DIRECTORY):
+  #   for file in files:
+  #     if (file.lower().endswith(".json")):
+  #       file_name = os.path.splitext(os.path.basename(file))[0]
+  #       file_path = os.path.join(root, file)
+  #       with open(file_path, "r") as f:
+  #         json_data = json.load(f)
+  #         obj[file_name] = json_data
+  #         f.close()
   return web.json_response(obj)
 
 @PromptServer.instance.routes.post("/shinich39/db")
