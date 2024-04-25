@@ -80,8 +80,8 @@ class LoadFromDB():
   def INPUT_TYPES(cls):
     return {
       "required": {
-        "preview": ("STRING", {"default": "", "multiline": True}), # hidden
-        "text": ("STRING", {"default": "", "multiline": True}),
+        "text": ("STRING", {"default": "", "multiline": True}), # hidden
+        "input": ("STRING", {"default": "", "multiline": True}),
       },
     }
   
@@ -91,12 +91,12 @@ class LoadFromDB():
 
   CATEGORY = "utils"
 
-  def exec(self, preview, text,):
+  def exec(self, text, input,):
     if DEBUG:
-      print(f"preview: {preview}")
       print(f"text: {text}")
+      print(f"input: {input}")
 
-    return (preview,)
+    return (text,)
 
 NODE_CLASS_MAPPINGS["Save to DB"] = SaveToDB
 NODE_DISPLAY_NAME_MAPPINGS["Save to DB"] = "Save to DB"

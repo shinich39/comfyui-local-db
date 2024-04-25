@@ -10,7 +10,7 @@ let db = new KeyValues();
 $el("style", {
 	textContent: `
 	.shinich39-hidden { display: none; }
-	.shinich39-info { font-size: 10px; font-weight: 400; font-family: monospace; overflow-y: auto; overflow-wrap: break-word; margin: 0; white-space: pre-line; }
+	.shinich39-preview { font-size: 10px; font-weight: 400; font-family: monospace; overflow-y: auto; overflow-wrap: break-word; margin: 0; white-space: pre-line; }
 	.shinich39-label { margin: 0.5rem 0; }
 	.shinich39-box { background-color: #222; padding: 2px; color: #ddd; }
   #shinich39-keys { background-color: rgba(0,0,0,0.5); padding: 1rem; font-size: 14px; color: #ddd; line-height: 1.6; z-index: 1001; position: absolute; bottom: 0; left: 0; width: 100%; height: auto; }
@@ -55,7 +55,7 @@ async function save(key, value) {
 
 function render(key, element) {
   if (element) {
-    element.innerHTML = "Double click to select all character in the box.\n";
+    element.innerHTML = "Double click to select all characters in the box.\n";
     if (key) {
       const values = db.get(key);
       if (values && Array.isArray(values)) {
@@ -169,8 +169,8 @@ app.registerExtension({
         console.log("Save to DB", node);
       }
 
-      const container = document.createElement("div");
-      container.classList.add("shinich39-info");
+      const previewElement = document.createElement("div");
+      previewElement.classList.add("shinich39-preview");
 
       const textWidget = node.widgets.find(function(item) {
         return item.name === "text";
@@ -180,10 +180,10 @@ app.registerExtension({
       }
 
       const keyWidget = node.addWidget("text", "key", "", function(key) {
-        render(key, container);
+        render(key, previewElement);
       });
 
-      node.addWidget("button", "Add", "Add", function() {
+      node.addWidget("button", "Add", "Add", function(e) {
         let key = keyWidget.value.trim();
         let prevValue = db.get(key);
         let value = prevValue.concat([textWidget.value]);
@@ -195,7 +195,7 @@ app.registerExtension({
         save(key, value)
           .then(function() {
             db.set(key, value);
-            render(key, container);
+            render(key, previewElement);
           })
           .catch(function(err) {
             console.error(err);
@@ -213,53 +213,71 @@ app.registerExtension({
         save(key, value)
           .then(function() {
             db.set(key, value);
-            render(key, container);
+            render(key, previewElement);
           })
           .catch(function(err) {
             console.error(err);
           });
       });
 
-      node.addDOMWidget("preview", "customtext", container);
+      node.addDOMWidget("preview", "customtext", previewElement);
     } else if (node.comfyClass === "Load from DB") {
       if (DEBUG) {
         console.log("Load from DB", node);
       }
 
-      node.onConnectionsChange = updateAllNodes;
+      const inputWidget = node.widgets.find(function(item) {
+        return item.name === "input";
+      });
 
       const textWidget = node.widgets.find(function(item) {
         return item.name === "text";
       });
 
-      textWidget.element.addEventListener("focus", function(e) {
-        showKeys();
+      // create load button
+      node.addWidget("button", "Load", "Load", function() {
+        const keys = db.keys().sort(function(a, b) {
+          return a.localeCompare(b, undefined, {
+            numeric: true,
+            sensitivity: 'base',
+          });
+        });
+    
+        const str = keys.map(function(key) {
+          return `${key}`;
+        }).join("|");
+  
+        inputWidget.value = `\{${str}\}`;
       });
 
-      textWidget.element.addEventListener("blur", function(e) {
-        hideKeys();
-      });
+      // inputWidget.element.addEventListener("focus", function(e) {
+      //   showKeys();
+      // });
 
-      textWidget.element.addEventListener("change", updateAllNodes);
+      // inputWidget.element.addEventListener("blur", function(e) {
+      //   hideKeys();
+      // });
 
-      const previewWidget = node.widgets.find(function(item) {
-        return item.name === "preview";
-      });
+      // event 1
+      node.onConnectionsChange = updateAllNodes;
 
-      if (textWidget && previewWidget) {
-        // hide
+      // event 2
+      inputWidget.element.addEventListener("change", updateAllNodes);
+
+      // hide text widget
+      if (textWidget) {
         if (!DEBUG) {
-          previewWidget.element.classList.add("shinich39-hidden");
-          previewWidget.computeSize = () => [0, -4];
+          textWidget.element.classList.add("shinich39-hidden");
+          textWidget.computeSize = () => [0, -4];
         }
 
-        previewWidget.dynamicPrompts = false;
+        textWidget.dynamicPrompts = false;
       }
     }
   }
 });
 
-// update preview widget value
+// update text widget value
 function updateAllNodes() {
   for (const node of app.graph._nodes) {
     if (node.comfyClass === "Load from DB") {
@@ -267,15 +285,18 @@ function updateAllNodes() {
         console.log("Load from DB", node);
       }
 
-      const textWidget = node.widgets.find(function(item) {
-        return item.name === "text";
+      const inputWidget = node.widgets.find(function(item) {
+        return item.name === "input";
       });
+      if (!inputWidget) {
+        throw new Error("Widget not found.");
+      }
 
-      // const previewWidget = node.widgets.find(function(item) {
-      //   return item.name === "preview";
+      // const textWidget = node.widgets.find(function(item) {
+      //   return item.name === "text";
       // });
 
-      let prompt = stripComments(textWidget.value);
+      let prompt = stripComments(inputWidget.value);
       let count = 0;
       while (prompt.replace("\\{", "").includes("{") && prompt.replace("\\}", "").includes("}") && count < 10) {
         const startIndex = prompt.replace("\\{", "00").indexOf("{");
@@ -295,11 +316,15 @@ function updateAllNodes() {
         }
 
         prompt = prompt.substring(0, startIndex) + randomOption + prompt.substring(endIndex + 1);
+        count++;
       }
 
-      node.widgets[0].value = prompt; // previewWidget
-      node.widgets_values[0] = prompt;
-      count++;
+      if (node.widgets[0]) {
+        node.widgets[0].value = prompt; // text widget
+      }
+      if (node.widgets_values[0]) {
+        node.widgets_values[0] = prompt; // text widget value
+      }
     }
   }
 }
