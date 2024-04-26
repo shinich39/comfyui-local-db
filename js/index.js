@@ -338,8 +338,7 @@ function updateAllNodes() {
       // });
 
       let prompt = stripComments(inputWidget.value);
-      let count = 0;
-      while (prompt.replace("\\{", "").includes("{") && prompt.replace("\\}", "").includes("}") && count < 10) {
+      while (prompt.replace("\\{", "").includes("{") && prompt.replace("\\}", "").includes("}")) {
         const startIndex = prompt.replace("\\{", "00").indexOf("{");
         const endIndex = prompt.replace("\\}", "00").indexOf("}");
 
@@ -349,14 +348,13 @@ function updateAllNodes() {
         const randomIndex = Math.floor(Math.random() * options.length);
         let randomOption = options[randomIndex];
 
-        // parse data
+        // search db
         const data = db.read(randomOption.trim());
         if (data.length > 0) {
           randomOption = data[Math.floor(Math.random() * data.length)];
         }
 
         prompt = prompt.substring(0, startIndex) + randomOption + prompt.substring(endIndex + 1);
-        count++;
       }
 
       if (node.widgets[0]) {
