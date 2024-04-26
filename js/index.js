@@ -357,10 +357,10 @@ function updateAllNodes() {
         prompt = prompt.substring(0, startIndex) + randomOption + prompt.substring(endIndex + 1);
       }
 
-      if (node.widgets[0]) {
+      if (node.widgets && node.widgets[0]) {
         node.widgets[0].value = prompt; // text widget
       }
-      if (node.widgets_values[0]) {
+      if (node.widgets_values && node.widgets_values[0]) {
         node.widgets_values[0] = prompt; // text widget value
       }
     }
