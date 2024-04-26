@@ -15,7 +15,7 @@ $el("style", {
 	.shinich39-hidden { display: none; }
 	.shinich39-preview { font-size: 10px; font-weight: 400; font-family: monospace; overflow-y: auto; overflow-wrap: break-word; margin: 0; white-space: pre-line; }
 	.shinich39-header { display: flex; justify-content: space-between; align-items: center; }
-	.shinich39-header button { font-size: 12px; color: var(--input-text); background-color: var(--comfy-input-bg); border-radius: 8px; border-color: var(--border-color); border-style: solid; margin-right: 0.2rem; cursor: pointer; }
+	.shinich39-header button { font-size: 10px; color: var(--input-text); background-color: var(--comfy-input-bg); border-radius: 8px; border-color: var(--border-color); border-style: solid; margin-right: 0.2rem; cursor: pointer; }
 	.shinich39-label { margin: 0.5rem 0; }
 	.shinich39-box { background-color: #222; padding: 2px; color: #ddd; }
   #shinich39-keys { background-color: rgba(0,0,0,0.5); padding: 1rem; font-size: 14px; color: #ddd; line-height: 1.6; z-index: 1001; position: absolute; bottom: 0; left: 0; width: 100%; height: auto; }
