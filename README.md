@@ -16,7 +16,7 @@ parsed only in braces.
 
 Select one value in key.
 
-Click to load button, show all keys in textarea.
+Click to Load button show all keys in textarea. {Key 1|Key 2|key 3|...}
 
 ![image-2](./images/2.png)
 
