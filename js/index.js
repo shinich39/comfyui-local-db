@@ -12,13 +12,13 @@ let db = new JSDB({
   
 $el("style", {
 	textContent: `
-	.shinich39-hidden { display: none; }
-	.shinich39-preview { font-size: 10px; font-weight: 400; font-family: monospace; overflow-y: auto; overflow-wrap: break-word; margin: 0; white-space: pre-line; }
-	.shinich39-header { display: flex; justify-content: space-between; align-items: center; }
-	.shinich39-header button { font-size: 10px; color: var(--input-text); background-color: var(--comfy-input-bg); border-radius: 8px; border-color: var(--border-color); border-style: solid; margin-right: 0.2rem; cursor: pointer; }
-	.shinich39-label { margin: 0.5rem 0; }
-	.shinich39-box { background-color: #222; padding: 2px; color: #ddd; }
-  #shinich39-keys { background-color: rgba(0,0,0,0.5); padding: 1rem; font-size: 14px; color: #ddd; line-height: 1.6; z-index: 1001; position: absolute; bottom: 0; left: 0; width: 100%; height: auto; }
+	.shinich39-local-db-hidden { display: none; }
+	.shinich39-local-db-preview { font-size: 10px; font-weight: 400; font-family: monospace; overflow-y: auto; overflow-wrap: break-word; margin: 0; white-space: pre-line; }
+	.shinich39-local-db-header { display: flex; justify-content: space-between; align-items: center; }
+	.shinich39-local-db-header button { font-size: 10px; color: var(--input-text); background-color: var(--comfy-input-bg); border-radius: 8px; border-color: var(--border-color); border-style: solid; margin-right: 0.2rem; cursor: pointer; }
+	.shinich39-local-db-label { margin: 0.5rem 0; }
+	.shinich39-local-db-box { background-color: #222; padding: 2px; color: #ddd; }
+  #shinich39-local-db-keys { background-color: rgba(0,0,0,0.5); padding: 1rem; font-size: 14px; color: #ddd; line-height: 1.6; z-index: 1001; position: absolute; bottom: 0; left: 0; width: 100%; height: auto; }
   `,
 	parent: document.body,
 });
@@ -83,12 +83,12 @@ function render(key, node) {
     const index = i;
 
     const header = document.createElement("div");
-    header.classList.add("shinich39-header");
+    header.classList.add("shinich39-local-db-header");
 
     const btnGroup = document.createElement("div");
 
     const label = document.createElement("span");
-    label.classList.add("shinich39-label");
+    label.classList.add("shinich39-local-db-label");
     label.innerHTML = `${i + 1} / ${data.length}`;
 
     const rm = document.createElement("button");
@@ -101,7 +101,7 @@ function render(key, node) {
     cg.innerHTML = "Change";
 
     const box = document.createElement("div");
-    box.classList.add("shinich39-box");
+    box.classList.add("shinich39-local-db-box");
     box.innerHTML = data[i];
     box.addEventListener("dblclick", function(e) {
       e.preventDefault();
@@ -184,10 +184,10 @@ function render(key, node) {
 }
 
 function showKeys() {
-  let wrapper = document.getElementById("shinich39-keys");
+  let wrapper = document.getElementById("shinich39-local-db-keys");
   if (!wrapper) {
     wrapper = document.createElement("div");
-    wrapper.id = "shinich39-keys";
+    wrapper.id = "shinich39-local-db-keys";
     wrapper.innerHTML = "LocalDB keys<br />";
     
     const keys = db.keys.sort(function(a, b) {
@@ -209,7 +209,7 @@ function showKeys() {
 }
 
 function hideKeys() {
-  let wrapper = document.getElementById("shinich39-keys");
+  let wrapper = document.getElementById("shinich39-local-db-keys");
   if (wrapper) {
     wrapper.parentNode.removeChild(wrapper);
   }
@@ -261,7 +261,7 @@ app.registerExtension({
       }
 
       const previewElement = document.createElement("div");
-      previewElement.classList.add("shinich39-preview");
+      previewElement.classList.add("shinich39-local-db-preview");
 
       const textWidget = node.widgets.find(function(item) {
         return item.name === "text";
@@ -352,7 +352,7 @@ app.registerExtension({
       // hide text widget
       if (textWidget) {
         if (!DEBUG) {
-          textWidget.element.classList.add("shinich39-hidden");
+          textWidget.element.classList.add("shinich39-local-db-hidden");
           textWidget.computeSize = () => [0, -4];
         }
 
