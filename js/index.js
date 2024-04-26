@@ -4,7 +4,7 @@ import { $el } from "../../scripts/ui.js";
 import JSDB from "./jsdb.js";
 
 const DEBUG = false;
-
+let isLoaded = false;
 let db = new JSDB({
   unique: false,
   type: String,
@@ -36,6 +36,8 @@ async function load() {
   if (DEBUG) {
     console.log("GET /shinich39/db", db);
   }
+
+  isLoaded = true;
 }
 
 async function save(key, value) {
@@ -59,7 +61,7 @@ async function save(key, value) {
 }
 
 function render(key, element) {
-  if (element) {
+  if (isLoaded && element) {
     element.innerHTML = "Double click to select all characters in the box.\n";
     const data = db.read(key);
     // element.innerHTML += `${data.length} data in ${key}`
@@ -262,6 +264,14 @@ app.registerExtension({
       });
   
       node.addDOMWidget("preview", "customtext", previewElement);
+
+      // fix clone
+      setTimeout(function() {
+        if (keyWidget) {
+          const key = keyWidget.value;
+          render(key, previewElement);
+        }
+      }, 128);
     } else if (node.comfyClass === "Load from DB") {
       if (DEBUG) {
         console.log("Load from DB", node);
