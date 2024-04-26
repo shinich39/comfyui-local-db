@@ -60,88 +60,126 @@ async function save(key, value) {
   throw new Error(response.statusText);
 }
 
-function render(key, element) {
-  if (isLoaded && element) {
-    element.innerHTML = "Double click to select all characters in the box.\n";
-    const data = db.read(key);
-    // element.innerHTML += `${data.length} data in ${key}`
-    for (let i = 0; i < data.length; i++) {
-      const text = data[i];
-      const index = i;
+function render(key, node) {
+  if (!isLoaded || !node || !node.widgets) {
+    return;
+  }
+  const textWidget = node.widgets.find(function(item) {
+    return item.name === "text";
+  });
+  const previewWidget = node.widgets.find(function(item) {
+    return item.name === "preview";
+  });
+  if (!previewWidget || !textWidget) {
+    return;
+  }
 
-      const header = document.createElement("div");
-      header.classList.add("shinich39-header");
+  const previewElement = previewWidget.element;
+  // previewElement.innerHTML = "Double click to select all characters in the box.\n";
+  const data = db.read(key);
+  // previewElement.innerHTML += `${data.length} data in ${key}`
+  for (let i = 0; i < data.length; i++) {
+    const text = data[i];
+    const index = i;
 
-      const btnGroup = document.createElement("div");
+    const header = document.createElement("div");
+    header.classList.add("shinich39-header");
 
-      const label = document.createElement("span");
-      label.classList.add("shinich39-label");
-      label.innerHTML = `${i + 1} / ${data.length}`;
+    const btnGroup = document.createElement("div");
 
-      const rm = document.createElement("button");
-      rm.innerHTML = "Remove";
+    const label = document.createElement("span");
+    label.classList.add("shinich39-label");
+    label.innerHTML = `${i + 1} / ${data.length}`;
 
-      const cp = document.createElement("button");
-      cp.innerHTML = "Copy";
+    const rm = document.createElement("button");
+    rm.innerHTML = "Remove";
 
-      const box = document.createElement("div");
-      box.classList.add("shinich39-box");
-      box.innerHTML = data[i];
-      box.addEventListener("dblclick", function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        var sel, range;
-        if (window.getSelection && document.createRange) {
-          range = document.createRange();
-          range.selectNodeContents(e.target);
-          sel = window.getSelection();
-          sel.removeAllRanges();
-          sel.addRange(range);
-        } else if (document.body.createTextRange) {
-          range = document.body.createTextRange();
-          range.moveToElementText(e.target);
-          range.select();
-        }
+    const cp = document.createElement("button");
+    cp.innerHTML = "Copy";
+
+    const cg = document.createElement("button");
+    cg.innerHTML = "Change";
+
+    const box = document.createElement("div");
+    box.classList.add("shinich39-box");
+    box.innerHTML = data[i];
+    box.addEventListener("dblclick", function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      var sel, range;
+      if (window.getSelection && document.createRange) {
+        range = document.createRange();
+        range.selectNodeContents(e.target);
+        sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+      } else if (document.body.createTextRange) {
+        range = document.body.createTextRange();
+        range.moveToElementText(e.target);
+        range.select();
+      }
+    });
+
+    rm.addEventListener("click", function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const newData = db.read(key).filter(function(item, idx) {
+        return idx !== index;
       });
 
-      rm.addEventListener("click", function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-
-        const newData = db.read(key).filter(function(item, idx) {
-          return idx !== index;
+      save(key, newData)
+        .then(function() {
+          if (newData.length === 0) {
+            db.remove(key);
+          } else {
+            db.update(key, newData);
+          }
+          render(key, node);
+        })
+        .catch(function(err) {
+          console.error(err);
         });
+    });
 
-        save(key, newData)
-          .then(function() {
-            if (newData.length === 0) {
-              db.remove(key);
-            } else {
-              db.update(key, newData);
-            }
-            render(key, element);
-          })
-          .catch(function(err) {
-            console.error(err);
-          });
+    cp.addEventListener("click", function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (navigator && navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text);
+      }
+    });
+
+    cg.addEventListener("click", function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const newData = db.read(key).map(function(item, idx) {
+        return idx !== index ? item : textWidget.value;
       });
 
-      cp.addEventListener("click", function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        if (navigator && navigator.clipboard && navigator.clipboard.writeText) {
-          navigator.clipboard.writeText(text);
-        }
-      });
+      save(key, newData)
+        .then(function() {
+          if (newData.length === 0) {
+            db.remove(key);
+          } else {
+            db.update(key, newData);
+          }
+          render(key, node);
+        })
+        .catch(function(err) {
+          console.error(err);
+        });
+    });
 
-      btnGroup.appendChild(cp);
-      btnGroup.appendChild(rm);
+    btnGroup.appendChild(cp);
+    btnGroup.appendChild(cg);
+    btnGroup.appendChild(rm);
 
-      header.appendChild(label);
-      header.appendChild(btnGroup);
-      element.appendChild(header);
-      element.appendChild(box);
-    }
+    header.appendChild(label);
+    header.appendChild(btnGroup);
+    previewElement.appendChild(header);
+    previewElement.appendChild(box);
   }
 }
 
@@ -196,13 +234,9 @@ app.registerExtension({
                   return item.name === "key";
                 });
 
-                const previewWidget = node.widgets.find(function(item) {
-                  return item.name === "preview";
-                });
-
-                if (keyWidget && previewWidget) {
+                if (keyWidget) {
                   const key = keyWidget.value;
-                  render(key, previewWidget.element);
+                  render(key, node);
                 }
               } catch(err) {
                 console.error(err);
@@ -237,7 +271,7 @@ app.registerExtension({
       }
 
       const keyWidget = node.addWidget("text", "key", "", function(key) {
-        render(key, previewElement);
+        render(key, node);
       });
 
       node.addWidget("button", "Add", "Add", function(e) {
@@ -256,7 +290,7 @@ app.registerExtension({
             } else {
               db.update(key, newData);
             }
-            render(key, previewElement);
+            render(key, node);
           })
           .catch(function(err) {
             console.error(err);
@@ -269,7 +303,7 @@ app.registerExtension({
       setTimeout(function() {
         if (keyWidget) {
           const key = keyWidget.value;
-          render(key, previewElement);
+          render(key, node);
         }
       }, 128);
     } else if (node.comfyClass === "Load from DB") {
