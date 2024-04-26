@@ -12,11 +12,11 @@ Show values when enter key.
 
 ### Add node > utils > Load from DB
 
-parsed only in braces.
+Parse key in braces. e.g. {key}
 
 Select one value in key.
 
-Click to Load button show all keys in textarea. {Key 1|Key 2|key 3|...}
+Click to Load button show all keys in textarea. e.g. {Key 1|Key 2|key 3|...}
 
 ![image-2](./images/2.png)
 

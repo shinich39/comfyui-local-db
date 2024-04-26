@@ -50,9 +50,14 @@ async def set_data(req):
 
   req_data = await req.json()
   file_path = os.path.abspath(os.path.join(DB_DIRECTORY, req_data["key"] + ".json"))
-  with open(file_path, "w+") as f:
-    f.write(json.dumps(req_data["value"], indent=2))
-    f.close()
+  if len(req_data["value"]) == 0:
+    if os.path.exists(file_path):
+      os.remove(file_path)
+  else: 
+    with open(file_path, "w+") as f:
+      f.write(json.dumps(req_data["value"], indent=2))
+      f.close()
+      
   return web.Response(status=200)
 
 # main

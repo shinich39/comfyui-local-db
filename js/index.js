@@ -112,7 +112,11 @@ function render(key, element) {
 
         save(key, newData)
           .then(function() {
-            db.update(key, newData);
+            if (newData.length === 0) {
+              db.remove(key);
+            } else {
+              db.update(key, newData);
+            }
             render(key, element);
           })
           .catch(function(err) {
@@ -237,15 +241,19 @@ app.registerExtension({
       node.addWidget("button", "Add", "Add", function(e) {
         let key = keyWidget.value.trim();
         let prevValues = db.read(key);
-        let value = prevValues.concat([textWidget.value]);
+        let newData = prevValues.concat([textWidget.value]);
 
         if (key === "") {
           throw new Error("Key cannot be empty.");
         }
   
-        save(key, value)
+        save(key, newData)
           .then(function() {
-            db.update(key, value);
+            if (newData.length === 0) {
+              db.remove(key);
+            } else {
+              db.update(key, newData);
+            }
             render(key, previewElement);
           })
           .catch(function(err) {
