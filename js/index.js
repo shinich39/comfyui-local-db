@@ -73,11 +73,11 @@ function render(key, node) {
   if (!previewWidget || !textWidget) {
     return;
   }
-
   const previewElement = previewWidget.element;
+  previewElement.innerHTML = ""; // clear
   // previewElement.innerHTML = "Double click to select all characters in the box.\n";
-  const data = db.read(key);
   // previewElement.innerHTML += `${data.length} data in ${key}`
+  const data = db.read(key);
   for (let i = 0; i < data.length; i++) {
     const text = data[i];
     const index = i;
