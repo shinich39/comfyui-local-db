@@ -1,16 +1,21 @@
 import { app } from "../../scripts/app.js";
 import { api } from "../../scripts/api.js";
 import { $el } from "../../scripts/ui.js";
-import KeyValues from "./kvjs.js";
+import JSDB from "./jsdb.js";
 
 const DEBUG = false;
 
-let db = new KeyValues();
+let db = new JSDB({
+  unique: false,
+  type: String,
+});
   
 $el("style", {
 	textContent: `
 	.shinich39-hidden { display: none; }
 	.shinich39-preview { font-size: 10px; font-weight: 400; font-family: monospace; overflow-y: auto; overflow-wrap: break-word; margin: 0; white-space: pre-line; }
+	.shinich39-header { display: flex; justify-content: space-between; align-items: center; }
+	.shinich39-header button { font-size: 12px; color: var(--input-text); background-color: var(--comfy-input-bg); border-radius: 8px; border-color: var(--border-color); border-style: solid; margin-right: 0.2rem; cursor: pointer; }
 	.shinich39-label { margin: 0.5rem 0; }
 	.shinich39-box { background-color: #222; padding: 2px; color: #ddd; }
   #shinich39-keys { background-color: rgba(0,0,0,0.5); padding: 1rem; font-size: 14px; color: #ddd; line-height: 1.6; z-index: 1001; position: absolute; bottom: 0; left: 0; width: 100%; height: auto; }
@@ -26,7 +31,7 @@ async function load() {
   const response = await api.fetchApi("/shinich39/db", { cache: "no-store" });
   const json = await response.json();
   
-  db.setAll(json);
+  db.import(json);
 
   if (DEBUG) {
     console.log("GET /shinich39/db", db);
@@ -56,38 +61,80 @@ async function save(key, value) {
 function render(key, element) {
   if (element) {
     element.innerHTML = "Double click to select all characters in the box.\n";
-    if (key) {
-      const values = db.get(key);
-      if (values && Array.isArray(values)) {
-        // element.innerHTML += `${values.length} values in ${key}`
-        for (let i = 0; i < values.length; i++) {
-          const label = document.createElement("div");
-          label.classList.add("shinich39-label");
-          label.innerHTML = `${i + 1} / ${values.length}`;
-          const box = document.createElement("div");
-          box.classList.add("shinich39-box");
-          box.innerHTML = values[i];
-          element.appendChild(label);
-          element.appendChild(box);
+    const data = db.read(key);
+    // element.innerHTML += `${data.length} data in ${key}`
+    for (let i = 0; i < data.length; i++) {
+      const text = data[i];
+      const index = i;
 
-          box.addEventListener("dblclick", function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            var sel, range;
-            if (window.getSelection && document.createRange) {
-              range = document.createRange();
-              range.selectNodeContents(e.target);
-              sel = window.getSelection();
-              sel.removeAllRanges();
-              sel.addRange(range);
-            } else if (document.body.createTextRange) {
-              range = document.body.createTextRange();
-              range.moveToElementText(e.target);
-              range.select();
-            }
-          });
+      const header = document.createElement("div");
+      header.classList.add("shinich39-header");
+
+      const btnGroup = document.createElement("div");
+
+      const label = document.createElement("span");
+      label.classList.add("shinich39-label");
+      label.innerHTML = `${i + 1} / ${data.length}`;
+
+      const rm = document.createElement("button");
+      rm.innerHTML = "Remove";
+
+      const cp = document.createElement("button");
+      cp.innerHTML = "Copy";
+
+      const box = document.createElement("div");
+      box.classList.add("shinich39-box");
+      box.innerHTML = data[i];
+      box.addEventListener("dblclick", function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var sel, range;
+        if (window.getSelection && document.createRange) {
+          range = document.createRange();
+          range.selectNodeContents(e.target);
+          sel = window.getSelection();
+          sel.removeAllRanges();
+          sel.addRange(range);
+        } else if (document.body.createTextRange) {
+          range = document.body.createTextRange();
+          range.moveToElementText(e.target);
+          range.select();
         }
-      }
+      });
+
+      rm.addEventListener("click", function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const newData = db.read(key).filter(function(item, idx) {
+          return idx !== index;
+        });
+
+        save(key, newData)
+          .then(function() {
+            db.update(key, newData);
+            render(key, element);
+          })
+          .catch(function(err) {
+            console.error(err);
+          });
+      });
+
+      cp.addEventListener("click", function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (navigator && navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text);
+        }
+      });
+
+      btnGroup.appendChild(cp);
+      btnGroup.appendChild(rm);
+
+      header.appendChild(label);
+      header.appendChild(btnGroup);
+      element.appendChild(header);
+      element.appendChild(box);
     }
   }
 }
@@ -99,7 +146,7 @@ function showKeys() {
     wrapper.id = "shinich39-keys";
     wrapper.innerHTML = "LocalDB keys<br />";
     
-    const keys = db.keys().sort(function(a, b) {
+    const keys = db.keys.sort(function(a, b) {
       return a.localeCompare(b, undefined, {
         numeric: true,
         sensitivity: 'base',
@@ -107,7 +154,7 @@ function showKeys() {
     });
 
     const str = keys.map(function(key) {
-      const len = db.len(key);
+      const len = db.read(key).length;
       return `${key}(${len})`;
     }).join(", ");
 
@@ -189,8 +236,8 @@ app.registerExtension({
 
       node.addWidget("button", "Add", "Add", function(e) {
         let key = keyWidget.value.trim();
-        let prevValue = db.get(key);
-        let value = prevValue.concat([textWidget.value]);
+        let prevValues = db.read(key);
+        let value = prevValues.concat([textWidget.value]);
 
         if (key === "") {
           throw new Error("Key cannot be empty.");
@@ -198,7 +245,7 @@ app.registerExtension({
   
         save(key, value)
           .then(function() {
-            db.set(key, value);
+            db.update(key, value);
             render(key, previewElement);
           })
           .catch(function(err) {
@@ -206,24 +253,6 @@ app.registerExtension({
           });
       });
   
-      node.addWidget("button", "Set", "Set", function() {
-        let key = keyWidget.value.trim();
-        let value = [textWidget.value];
-  
-        if (key === "") {
-          throw new Error("Key cannot be empty.");
-        }
-  
-        save(key, value)
-          .then(function() {
-            db.set(key, value);
-            render(key, previewElement);
-          })
-          .catch(function(err) {
-            console.error(err);
-          });
-      });
-
       node.addDOMWidget("preview", "customtext", previewElement);
     } else if (node.comfyClass === "Load from DB") {
       if (DEBUG) {
@@ -240,7 +269,7 @@ app.registerExtension({
 
       // create load button
       node.addWidget("button", "Load", "Load", function() {
-        const keys = db.keys().sort(function(a, b) {
+        const keys = db.keys.sort(function(a, b) {
           return a.localeCompare(b, undefined, {
             numeric: true,
             sensitivity: 'base',
@@ -312,11 +341,10 @@ function updateAllNodes() {
         const randomIndex = Math.floor(Math.random() * options.length);
         let randomOption = options[randomIndex];
 
-        // parse option
-        if (db.exists(randomOption.trim())) {
-          const values = db.get(randomOption.trim());
-          const valueIndex = Math.floor(Math.random() * values.length);
-          randomOption = values[valueIndex];
+        // parse data
+        const data = db.read(randomOption.trim());
+        if (data.length > 0) {
+          randomOption = data[Math.floor(Math.random() * data.length)];
         }
 
         prompt = prompt.substring(0, startIndex) + randomOption + prompt.substring(endIndex + 1);

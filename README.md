@@ -1,21 +1,24 @@
 ## comfyui-local-db
 
-Store text to Key-Values pair json. 
+Store text to Key-Value pair database. 
 
 ## Usage
 
 ### Add node > utils > Save to DB
 
+Show values when enter key.
+
 ![image-1](./images/1.png)
 
 ### Add node > utils > Load from DB
 
-Add multiple values to string key. parsed only in braces.
+parsed only in braces.
 
-e.g. {key} => choose random value in multiple values
+Select one value in key.
+
+Click to load button, show all keys in textarea.
 
 ![image-2](./images/2.png)
-![image-3](./images/3.png)
 
 ## References
 
