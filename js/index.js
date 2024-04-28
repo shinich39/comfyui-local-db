@@ -145,14 +145,17 @@ function render(key, node) {
     cp.addEventListener("click", function(e) {
       e.preventDefault();
       e.stopPropagation();
-      if (navigator && navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(text);
-      }
+      // if (navigator && navigator.clipboard && navigator.clipboard.writeText) {
+      //   navigator.clipboard.writeText(text);
+      // }
+      textWidget.value = text;
     });
 
     cg.addEventListener("click", function(e) {
       e.preventDefault();
       e.stopPropagation();
+
+      const before = box.scrollTop;
 
       const newData = db.read(key).map(function(item, idx) {
         return idx !== index ? item : textWidget.value;
@@ -166,6 +169,14 @@ function render(key, node) {
             db.update(key, newData);
           }
           render(key, node);
+
+          // scroll
+          const w = node.widgets.find(function(item) {
+            return item.name === "preview";
+          });
+          if (w && w.element) {
+            w.element.scrollTo = before;
+          }
         })
         .catch(function(err) {
           console.error(err);
