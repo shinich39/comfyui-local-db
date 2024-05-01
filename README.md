@@ -22,8 +22,8 @@ If multiple values in key, choose one randomly.
 
 ### Spread
 
-<img src="./images/before_spread.png" height="350" title="before_spread">
-<img src="./images/after_spread.png" height="350" title="after_spread">
+<img src="./images/before_spread.png" width="350" title="before_spread">
+<img src="./images/after_spread.png" width="350" title="after_spread">
 
 ## References
 
