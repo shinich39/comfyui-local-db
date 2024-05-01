@@ -2,23 +2,23 @@
 
 Store text to Key-Value pair database. 
 
+![image-1](./images/workflow.png)
+
 ## Usage
 
-### Add node > utils > Save to DB
+### Add node > utils > Load DB
 
 Show values when enter key.
 
-![image-1](./images/1.png)
+![image-2](./images/blur.png)
 
-### Add node > utils > Load from DB
+Show all keys in DB when focus on textarea.
 
-Parse key in braces. e.g. {key}
+![image-3](./images/focus.png)
 
-Select one value in key.
+Enter to textarea $ + key.
 
-Click to Load button show all keys in textarea. e.g. {Key 1|Key 2|key 3|...}
-
-![image-2](./images/2.png)
+If multiple values in key, choose one randomly.
 
 ## References
 

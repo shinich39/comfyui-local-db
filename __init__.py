@@ -2,7 +2,7 @@
 @author: shinich39
 @title: Local DB
 @nickname: Local DB
-@version: 1.0.0
+@version: 1.0.1
 @description: Store text to Key-Values pair json.
 """
 
@@ -12,7 +12,7 @@ import os
 import json
 
 DEBUG = False
-VERSION = "1.0.0"
+VERSION = "1.0.1"
 WEB_DIRECTORY = "./js"
 NODE_CLASS_MAPPINGS = {}
 NODE_DISPLAY_NAME_MAPPINGS = {}
@@ -22,15 +22,15 @@ __DIRNAME = os.path.dirname(os.path.abspath(__file__))
 DB_DIRECTORY = os.path.join(__DIRNAME, "./db")
 
 @PromptServer.instance.routes.get("/shinich39/db")
-async def get_data(req):
-  obj = {}
+async def get_data(request):
+  res = {}
   for file in os.listdir(DB_DIRECTORY):
     if file.lower().endswith(".json"):
         file_name = os.path.splitext(os.path.basename(file))[0]
         file_path = os.path.join(DB_DIRECTORY, file)
         with open(file_path, "r") as f:
           json_data = json.load(f)
-          obj[file_name] = json_data
+          res[file_name] = json_data
           f.close()
   # for root, dirs, files in os.walk(DB_DIRECTORY):
   #   for file in files:
@@ -39,53 +39,29 @@ async def get_data(req):
   #       file_path = os.path.join(root, file)
   #       with open(file_path, "r") as f:
   #         json_data = json.load(f)
-  #         obj[file_name] = json_data
+  #         res[file_name] = json_data
   #         f.close()
-  return web.json_response(obj)
+  return web.json_response(res)
 
 @PromptServer.instance.routes.post("/shinich39/db")
-async def set_data(req):
+async def set_data(request):
   if os.path.isdir(DB_DIRECTORY) == False:
     os.mkdir(DB_DIRECTORY)
 
-  req_data = await req.json()
-  file_path = os.path.abspath(os.path.join(DB_DIRECTORY, req_data["key"] + ".json"))
-  if len(req_data["value"]) == 0:
+  req = await request.json()
+  file_path = os.path.abspath(os.path.join(DB_DIRECTORY, req["key"] + ".json"))
+  if len(req["value"]) == 0:
     if os.path.exists(file_path):
       os.remove(file_path)
   else: 
     with open(file_path, "w+") as f:
-      f.write(json.dumps(req_data["value"], indent=2))
+      f.write(json.dumps(req["value"], indent=2))
       f.close()
       
   return web.Response(status=200)
 
-# main
-class SaveToDB():
-  def __init__(self):
-    pass
-
-  @classmethod
-  def INPUT_TYPES(cls):
-    return {
-      "required": {
-        "text": ("STRING", {"default": "", "multiline": True}),
-      },
-    }
-  
-  FUNCTION = "exec"
-  RETURN_TYPES = ("STRING",)
-  RETURN_NAMES = ("text",)
-
-  CATEGORY = "utils"
-
-  def exec(self, text,):
-    if DEBUG:
-      print(f"text: {text}")
-
-    return (text,)
-  
-class LoadFromDB():
+# main  
+class LoadDB():
   def __init__(self):
     pass
 
@@ -111,8 +87,5 @@ class LoadFromDB():
 
     return (text,)
 
-NODE_CLASS_MAPPINGS["Save to DB"] = SaveToDB
-NODE_DISPLAY_NAME_MAPPINGS["Save to DB"] = "Save to DB"
-
-NODE_CLASS_MAPPINGS["Load from DB"] = LoadFromDB
-NODE_DISPLAY_NAME_MAPPINGS["Load from DB"] = "Load from DB"
+NODE_CLASS_MAPPINGS["Load DB"] = LoadDB
+NODE_DISPLAY_NAME_MAPPINGS["Load DB"] = "Load DB"
