@@ -28,8 +28,10 @@ BACKUP_DIRECTORY = os.path.join(__DIRNAME, "./db", datetime.datetime.now().strft
 async def get_data(request):
 
   # backup
+  if os.path.isdir(DB_DIRECTORY) == False:
+    os.mkdir(DB_DIRECTORY)
+    
   if os.path.exists(BACKUP_DIRECTORY) == False:
-
     os.mkdir(BACKUP_DIRECTORY)
     
     for file in os.listdir(DB_DIRECTORY):
