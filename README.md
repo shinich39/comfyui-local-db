@@ -24,11 +24,15 @@ If multiple values in key, choose one randomly.
 
 before
 
-<img src="./images/before_spread.png" width="100%" title="before spread">
+<p>
+  <img src="./images/before_spread.png" title="before spread">
+  <em>Before</em>
+</p>
 
-after
-
-<img src="./images/after_spread.png" width="100%" title="after spread">
+<p>
+  <img src="./images/after_spread.png" title="after spread">
+  <em>After</em>
+</p>
 
 ## References
 
