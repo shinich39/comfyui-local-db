@@ -2,6 +2,7 @@ import { app } from "../../scripts/app.js";
 import { api } from "../../scripts/api.js";
 import { $el } from "../../scripts/ui.js";
 import JSDB from "./jsdb.js";
+import jsutl from "./jsutl.js";
 
 const DEBUG = false;
 let isLoaded = false;
@@ -15,7 +16,7 @@ $el("style", {
 	.shinich39-local-db-hidden { display: none; }
 	.shinich39-local-db-preview { font-size: 10px; font-weight: 400; font-family: monospace; overflow-y: auto; overflow-wrap: break-word; margin: 0; white-space: pre-line; }
 	.shinich39-local-db-header { display: flex; justify-content: space-between; align-items: center; }
-	.shinich39-local-db-header button { font-size: 10px; color: var(--input-text); background-color: var(--comfy-input-bg); border-radius: 8px; border-color: var(--border-color); border-style: solid; margin-right: 0.2rem; cursor: pointer; }
+	.shinich39-local-db-header button { font-size: 10px; color: var(--input-text); background-color: var(--comfy-input-bg); border-radius: 8px; border-color: var(--border-color); border-style: solid; margin-right: 0.3rem; cursor: pointer; }
 	.shinich39-local-db-label { margin: 0.5rem 0; }
 	.shinich39-local-db-box { background-color: #222; padding: 2px; color: #ddd; }
   `,
@@ -58,6 +59,36 @@ function parseString(str, keys) {
   }
 
   return str;
+}
+
+function spreadString(str) {
+  let result = [], offset = 0;
+
+  str = stripComments(str);
+  while (str.replace("\\{", "").includes("{") && str.replace("\\}", "").includes("}")) {
+    const startIndex = str.replace("\\{", "00").indexOf("{");
+    const endIndex = str.replace("\\}", "00").indexOf("}");
+  
+    const optionsString = str.substring(startIndex + 1, endIndex);
+    const options = optionsString.split("|");
+
+    if (offset !== startIndex) {
+      result.push([str.substring(offset, startIndex)]);
+    }
+  
+    result.push(options);
+
+    const arr = jsutl.array(endIndex - startIndex, "0");
+
+    str = str.substring(0, startIndex) + arr.join("") + str.substring(endIndex + 1);
+    offset = endIndex;
+  }
+
+  if (offset !== str.length) {
+    result.push([str.substring(offset)]);
+  }
+
+  return result;
 }
 
 function hideWidget(widget) {
@@ -311,6 +342,9 @@ function updateNode(node) {
       
           const rm = document.createElement("button");
           rm.innerHTML = "Remove";
+
+          const sp = document.createElement("button");
+          sp.innerHTML = "Spread";
       
           const cp = document.createElement("button");
           cp.innerHTML = "Copy";
@@ -342,9 +376,10 @@ function updateNode(node) {
             e.preventDefault();
             e.stopPropagation();
       
-            const newData = db.read(key).filter(function(item, idx) {
-              return idx !== index;
-            });
+            const newData = db.read(key)
+              .filter(function(item, idx) {
+                return idx !== index;
+              });
       
             save(key, newData)
               .then(function() {
@@ -369,14 +404,48 @@ function updateNode(node) {
               inputWidget.value = text;
             }
           });
+
+          sp.addEventListener("click", function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            const newData = db.read(key)
+              .reduce(function(acc, cur, idx, arr) {
+                if (idx !== index) {
+                  acc.push(cur);
+                } else {
+                  const arr = spreadString(text);
+                  const data = jsutl.spread(arr).map(function(items) {
+                    return items.join("");
+                  });
+
+                  acc = acc.concat(data);
+                }
+                return acc;
+              }, []);
+
+            save(key, newData)
+              .then(function() {
+                if (newData.length === 0) {
+                  db.remove(key);
+                } else {
+                  db.update(key, newData);
+                }
+                updateNode(node);
+              })
+              .catch(function(err) {
+                console.error(err);
+              });
+          });
       
           cg.addEventListener("click", function(e) {
             e.preventDefault();
             e.stopPropagation();
       
-            const newData = db.read(key).map(function(item, idx) {
-              return idx !== index ? item : inputWidget.value;
-            });
+            const newData = db.read(key)
+              .map(function(item, idx) {
+                return idx !== index ? item : inputWidget.value;
+              });
       
             save(key, newData)
               .then(function() {
@@ -394,6 +463,7 @@ function updateNode(node) {
       
           btnGroup.appendChild(cp);
           btnGroup.appendChild(cg);
+          btnGroup.appendChild(sp);
           btnGroup.appendChild(rm);
       
           header.appendChild(label);
