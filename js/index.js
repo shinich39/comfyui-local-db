@@ -193,20 +193,6 @@ app.registerExtension({
         });
     });
 
-    // create load button
-    // node.addWidget("button", "Load", "Load", function() {
-    //   const keys = db.keys.sort(function(a, b) {
-    //     return a.localeCompare(b, undefined, {
-    //       numeric: true,
-    //       sensitivity: 'base',
-    //     });
-    //   });
-    //   const str = keys.map(function(key) {
-    //     return `${key}`;
-    //   }).join("|");
-    //   inputWidget.value = `\{${str}\}`;
-    // });
-
     const previewWidget = node.addDOMWidget("preview", "", previewElement);
 
     // set node event
@@ -377,10 +363,10 @@ function updateNode(node) {
           cp.addEventListener("click", function(e) {
             e.preventDefault();
             e.stopPropagation();
-            // if (navigator && navigator.clipboard && navigator.clipboard.writeText) {
-            //   navigator.clipboard.writeText(text);
-            // }
-            inputWidget.value = text;
+            if (navigator && navigator.clipboard && navigator.clipboard.writeText) {
+              navigator.clipboard.writeText(text);
+            }
+            // inputWidget.value = text;
           });
       
           cg.addEventListener("click", function(e) {
