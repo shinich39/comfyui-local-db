@@ -365,8 +365,9 @@ function updateNode(node) {
             e.stopPropagation();
             if (navigator && navigator.clipboard && navigator.clipboard.writeText) {
               navigator.clipboard.writeText(text);
+            } else {
+              inputWidget.value = text;
             }
-            // inputWidget.value = text;
           });
       
           cg.addEventListener("click", function(e) {
