@@ -26,18 +26,18 @@ BACKUP_DIRECTORY = os.path.join(__DIRNAME, "./db", datetime.datetime.now().strft
 
 @PromptServer.instance.routes.get("/shinich39/db")
 async def get_data(request):
-  if os.path.exists(BACKUP_DIRECTORY):
-    os.remove(BACKUP_DIRECTORY)
-
-  os.mkdir(BACKUP_DIRECTORY)
 
   # backup
-  for file in os.listdir(DB_DIRECTORY):
-    if file.lower().endswith(".json"):
-      src_path = os.path.join(DB_DIRECTORY, file)
-      dst_path = os.path.join(BACKUP_DIRECTORY, file)
-      shutil.copyfile(src_path, dst_path)
-  
+  if os.path.exists(BACKUP_DIRECTORY) == False:
+
+    os.mkdir(BACKUP_DIRECTORY)
+    
+    for file in os.listdir(DB_DIRECTORY):
+      if file.lower().endswith(".json"):
+        src_path = os.path.join(DB_DIRECTORY, file)
+        dst_path = os.path.join(BACKUP_DIRECTORY, file)
+        shutil.copyfile(src_path, dst_path)
+
   # read
   res = {}
   for file in os.listdir(DB_DIRECTORY):
