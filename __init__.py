@@ -10,6 +10,8 @@ from server import PromptServer
 from aiohttp import web
 import os
 import json
+import shutil
+import datetime
 
 DEBUG = False
 VERSION = "1.0.1"
@@ -20,9 +22,23 @@ __all__ = ["NODE_CLASS_MAPPINGS", "NODE_DISPLAY_NAME_MAPPINGS"]
 
 __DIRNAME = os.path.dirname(os.path.abspath(__file__))
 DB_DIRECTORY = os.path.join(__DIRNAME, "./db")
+BACKUP_DIRECTORY = os.path.join(__DIRNAME, "./db", datetime.datetime.now().strftime('%Y-%m-%d'))
 
 @PromptServer.instance.routes.get("/shinich39/db")
 async def get_data(request):
+  if os.path.exists(BACKUP_DIRECTORY):
+    os.remove(BACKUP_DIRECTORY)
+
+  os.mkdir(BACKUP_DIRECTORY)
+
+  # backup
+  for file in os.listdir(DB_DIRECTORY):
+    if file.lower().endswith(".json"):
+      src_path = os.path.join(DB_DIRECTORY, file)
+      dst_path = os.path.join(BACKUP_DIRECTORY, file)
+      shutil.copyfile(src_path, dst_path)
+  
+  # read
   res = {}
   for file in os.listdir(DB_DIRECTORY):
     if file.lower().endswith(".json"):
@@ -32,6 +48,8 @@ async def get_data(request):
           json_data = json.load(f)
           res[file_name] = json_data
           f.close()
+
+  # read with subdirectory
   # for root, dirs, files in os.walk(DB_DIRECTORY):
   #   for file in files:
   #     if (file.lower().endswith(".json")):
@@ -41,6 +59,7 @@ async def get_data(request):
   #         json_data = json.load(f)
   #         res[file_name] = json_data
   #         f.close()
+
   return web.json_response(res)
 
 @PromptServer.instance.routes.post("/shinich39/db")
