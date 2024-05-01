@@ -35,6 +35,7 @@ function parseString(str, keys) {
   }
 
   str = stripComments(str);
+  let count = 0;
   while (str.replace("\\{", "").includes("{") && str.replace("\\}", "").includes("}")) {
     const startIndex = str.replace("\\{", "00").indexOf("{");
     const endIndex = str.replace("\\}", "00").indexOf("}");
@@ -46,6 +47,12 @@ function parseString(str, keys) {
     let randomOption = options[randomIndex];
 
     str = str.substring(0, startIndex) + randomOption + str.substring(endIndex + 1);
+
+    count++;
+
+    if (count > 3939) {
+      throw new Error("Invalid string format.");
+    }
   }
 
   for (const key of keys) {
@@ -171,15 +178,26 @@ app.registerExtension({
       return item.name === "text";
     });
 
+    let inputTimer;
     inputWidget.callback = function(value) {
-      const str = parseString(value);
-      // set text widget
-      if (node.widgets && node.widgets[0]) {
-        node.widgets[0].value = str;
+      if (inputTimer) {
+        clearTimeout(inputTimer);
       }
-      if (node.widgets_values && node.widgets_values[0]) {
-        node.widgets_values[0] = str;
-      }
+      inputTimer = setTimeout(function() {
+        try {
+          const str = parseString(value);
+          // set text widget
+          if (node.widgets && node.widgets[0]) {
+            node.widgets[0].value = str;
+          }
+          if (node.widgets_values && node.widgets_values[0]) {
+            node.widgets_values[0] = str;
+          }
+        } catch(err) {
+          console.error(err);
+        }
+        inputTimer = null;
+      }, 512);
     }
 
     inputWidget.element.addEventListener("focus", function(e) {
@@ -277,14 +295,19 @@ function updateNode(node) {
 
   // update text widget
   if (inputWidget) {
-    const str = parseString(inputWidget.value);
-    // set text widget
-    if (node.widgets && node.widgets[0]) {
-      node.widgets[0].value = str;
+    try {
+      const str = parseString(inputWidget.value);
+      // set text widget
+      if (node.widgets && node.widgets[0]) {
+        node.widgets[0].value = str;
+      }
+      if (node.widgets_values && node.widgets_values[0]) {
+        node.widgets_values[0] = str;
+      }
+    } catch(err) {
+      console.error(err);
     }
-    if (node.widgets_values && node.widgets_values[0]) {
-      node.widgets_values[0] = str;
-    }
+
   }
 
   // update preview widget
