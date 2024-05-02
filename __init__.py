@@ -22,10 +22,11 @@ __all__ = ["NODE_CLASS_MAPPINGS", "NODE_DISPLAY_NAME_MAPPINGS"]
 
 __DIRNAME = os.path.dirname(os.path.abspath(__file__))
 DB_DIRECTORY = os.path.join(__DIRNAME, "./db")
-BACKUP_DIRECTORY = os.path.join(__DIRNAME, "./db", datetime.datetime.now().strftime('%Y-%m-%d'))
 
 @PromptServer.instance.routes.get("/shinich39/db")
 async def get_data(request):
+  # current backup dir
+  BACKUP_DIRECTORY = os.path.join(DB_DIRECTORY, datetime.datetime.now().strftime('%Y-%m-%d'))
 
   # backup
   if os.path.isdir(DB_DIRECTORY) == False:
