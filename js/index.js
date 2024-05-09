@@ -15,10 +15,11 @@ $el("style", {
 	textContent: `
 	.shinich39-local-db-hidden { display: none; }
 	.shinich39-local-db-preview { font-size: 10px; font-weight: 400; font-family: monospace; overflow-y: auto; overflow-wrap: break-word; margin: 0; white-space: pre-line; }
+	.shinich39-local-db-wrapper { }
 	.shinich39-local-db-header { display: flex; justify-content: space-between; align-items: center; }
 	.shinich39-local-db-header button { font-size: 10px; color: var(--input-text); background-color: var(--comfy-input-bg); border-radius: 8px; border-color: var(--border-color); border-style: solid; margin-right: 0.3rem; cursor: pointer; }
 	.shinich39-local-db-label { margin: 0.5rem 0; }
-	.shinich39-local-db-box { background-color: #222; padding: 2px; color: #ddd; }
+	.shinich39-local-db-content { background-color: #222; padding: 2px; color: #ddd; }
   `,
 	parent: document.body,
 });
@@ -274,6 +275,210 @@ function updateNode(node) {
     return;
   }
 
+  function buildHeader() {
+    const keys = db.keys.sort(function(a, b) {
+      return a.localeCompare(b, undefined, {
+        numeric: true,
+        sensitivity: 'base',
+      });
+    });
+
+    let keyValueList = [];
+    let countKeys = 0;
+    let countValues = 0;
+    for (const key of keys) {
+      const len = db.read(key).length;
+      countKeys += 1;
+      countValues += len;
+      keyValueList.push(`${key}(${len})`);
+    }
+
+    const wrapper = document.createElement("div");
+    wrapper.classList.add("shinich39-local-db-wrapper");
+
+    const header = document.createElement("div");
+    header.classList.add("shinich39-local-db-header");
+
+    const label = document.createElement("span");
+    label.classList.add("shinich39-local-db-label");
+    label.innerHTML = `${countKeys} keys, ${countValues} values`;
+
+    const content = document.createElement("div");
+    content.classList.add("shinich39-local-db-content");
+    content.innerHTML = keyValueList.join(", ");
+
+    header.appendChild(label);
+    wrapper.appendChild(header);
+    wrapper.appendChild(content);
+    return wrapper;
+  }
+
+  function buildSeperator(key, values) {
+    const wrapper = document.createElement("div");
+    wrapper.classList.add("shinich39-local-db-wrapper");
+
+    const header = document.createElement("div");
+    header.classList.add("shinich39-local-db-header");
+
+    const label = document.createElement("span");
+    label.classList.add("shinich39-local-db-label");
+    label.innerHTML = `${values.length} results in "${key}"`;
+
+    header.appendChild(label);
+    wrapper.appendChild(header);
+    return wrapper;
+  }
+
+  function buildItem(key, values, index) {
+    const value = values[index];
+
+    const wrapper = document.createElement("div");
+    wrapper.classList.add("shinich39-local-db-wrapper");
+
+    const header = document.createElement("div");
+    header.classList.add("shinich39-local-db-header");
+
+    const btnGroup = document.createElement("div");
+
+    const label = document.createElement("span");
+    label.classList.add("shinich39-local-db-label");
+    label.innerHTML = `${key} ${index + 1} / ${values.length}`;
+
+    const rm = document.createElement("button");
+    rm.innerHTML = "Remove";
+
+    const sp = document.createElement("button");
+    sp.innerHTML = "Spread";
+
+    const cp = document.createElement("button");
+    cp.innerHTML = "Copy";
+
+    const cg = document.createElement("button");
+    cg.innerHTML = "Change";
+
+    const content = document.createElement("div");
+    content.classList.add("shinich39-local-db-content");
+    content.innerHTML = value;
+    content.addEventListener("dblclick", function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      var sel, range;
+      if (window.getSelection && document.createRange) {
+        range = document.createRange();
+        range.selectNodeContents(e.target);
+        sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+      } else if (document.body.createTextRange) {
+        range = document.body.createTextRange();
+        range.moveToElementText(e.target);
+        range.select();
+      }
+    });
+
+    rm.addEventListener("click", function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const newData = db.read(key)
+        .filter(function(item, idx) {
+          return idx !== index;
+        });
+
+      save(key, newData)
+        .then(function() {
+          if (newData.length === 0) {
+            db.remove(key);
+          } else {
+            db.update(key, newData);
+          }
+          updateNode(node);
+        })
+        .catch(function(err) {
+          console.error(err);
+        });
+    });
+
+    cp.addEventListener("click", function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      inputWidget.value = value;
+      // if (navigator && navigator.clipboard && navigator.clipboard.writeText) {
+      //   navigator.clipboard.writeText(value);
+      // } else {
+      //   inputWidget.value = value;
+      // }
+    });
+
+    sp.addEventListener("click", function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const newData = db.read(key)
+        .reduce(function(acc, cur, idx, arr) {
+          if (idx !== index) {
+            acc.push(cur);
+          } else {
+            const arr = spreadString(value);
+            const spreaded = jsutl.spread(arr).map(function(items) {
+              return items.join("");
+            });
+
+            acc = acc.concat(spreaded);
+          }
+          return acc;
+        }, []);
+
+      save(key, newData)
+        .then(function() {
+          if (newData.length === 0) {
+            db.remove(key);
+          } else {
+            db.update(key, newData);
+          }
+          updateNode(node);
+        })
+        .catch(function(err) {
+          console.error(err);
+        });
+    });
+
+    cg.addEventListener("click", function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const newData = db.read(key)
+        .map(function(item, idx) {
+          return idx !== index ? item : inputWidget.value;
+        });
+
+      save(key, newData)
+        .then(function() {
+          if (newData.length === 0) {
+            db.remove(key);
+          } else {
+            db.update(key, newData);
+          }
+          updateNode(node);
+        })
+        .catch(function(err) {
+          console.error(err);
+        });
+    });
+
+    btnGroup.appendChild(cp);
+    btnGroup.appendChild(cg);
+    btnGroup.appendChild(sp);
+    btnGroup.appendChild(rm);
+
+    header.appendChild(label);
+    header.appendChild(btnGroup);
+    wrapper.appendChild(header);
+    wrapper.appendChild(content);
+
+    return wrapper;
+  }
+
   const keyWidget = node.widgets.find(function(item) {
     return item.name === "find";
   });
@@ -290,8 +495,8 @@ function updateNode(node) {
     return item.name === "text";
   });
 
-  const isBoxFocused = document.activeElement && document.activeElement.classList.contains("shinich39-local-db-box");
-  const isInputFocused = isFocused(inputWidget.element);
+  // const isBoxFocused = document.activeElement && document.activeElement.classList.contains("shinich39-local-db-content");
+  // const isInputFocused = isFocused(inputWidget.element);
 
   // update text widget
   if (inputWidget) {
@@ -307,193 +512,24 @@ function updateNode(node) {
     } catch(err) {
       console.error(err);
     }
-
   }
 
   // update preview widget
-  if (previewWidget && !isBoxFocused) {
+  if (previewWidget) {
     const previewElement = previewWidget.element;
     previewElement.innerHTML = ""; // clear
-    if (isInputFocused) {
-      const keys = db.keys.sort(function(a, b) {
-        return a.localeCompare(b, undefined, {
-          numeric: true,
-          sensitivity: 'base',
-        });
-      });
 
-      let countValues = 0;
-  
-      const str = keys.map(function(key) {
-        const len = db.read(key).length;
-        countValues += len;
-        return `${key}(${len})`;
-      }).join(", ");
+    previewElement.appendChild(buildHeader());
+    
+    if (keyWidget && inputWidget) {
+      const key = keyWidget.value;
+      const values = db.read(key);
 
-      const header = document.createElement("div");
-      header.classList.add("shinich39-local-db-header");
+      // previewElement.appendChild(buildSeperator(key, values));
 
-      const label = document.createElement("span");
-      label.classList.add("shinich39-local-db-label");
-      label.innerHTML = `${keys.length} keys, ${countValues} values`;
-  
-      const box = document.createElement("div");
-      box.classList.add("shinich39-local-db-box");
-      box.innerHTML = str;
-
-      header.appendChild(label);
-      previewElement.appendChild(header);
-      previewElement.appendChild(box);
-    } else {
-      if (keyWidget && inputWidget) {
-        const key = keyWidget.value;
-        // previewElement.innerHTML = "Double click to select all characters in the box.\n";
-        // previewElement.innerHTML += `${data.length} data in ${key}`
-        const data = db.read(key);
-        for (let i = 0; i < data.length; i++) {
-          const text = data[i];
-          const index = i;
-      
-          const header = document.createElement("div");
-          header.classList.add("shinich39-local-db-header");
-      
-          const btnGroup = document.createElement("div");
-      
-          const label = document.createElement("span");
-          label.classList.add("shinich39-local-db-label");
-          label.innerHTML = `${i + 1} / ${data.length}`;
-      
-          const rm = document.createElement("button");
-          rm.innerHTML = "Remove";
-
-          const sp = document.createElement("button");
-          sp.innerHTML = "Spread";
-      
-          const cp = document.createElement("button");
-          cp.innerHTML = "Copy";
-      
-          const cg = document.createElement("button");
-          cg.innerHTML = "Change";
-      
-          const box = document.createElement("div");
-          box.classList.add("shinich39-local-db-box");
-          box.innerHTML = data[i];
-          box.addEventListener("dblclick", function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            var sel, range;
-            if (window.getSelection && document.createRange) {
-              range = document.createRange();
-              range.selectNodeContents(e.target);
-              sel = window.getSelection();
-              sel.removeAllRanges();
-              sel.addRange(range);
-            } else if (document.body.createTextRange) {
-              range = document.body.createTextRange();
-              range.moveToElementText(e.target);
-              range.select();
-            }
-          });
-      
-          rm.addEventListener("click", function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-      
-            const newData = db.read(key)
-              .filter(function(item, idx) {
-                return idx !== index;
-              });
-      
-            save(key, newData)
-              .then(function() {
-                if (newData.length === 0) {
-                  db.remove(key);
-                } else {
-                  db.update(key, newData);
-                }
-                updateNode(node);
-              })
-              .catch(function(err) {
-                console.error(err);
-              });
-          });
-      
-          cp.addEventListener("click", function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            if (navigator && navigator.clipboard && navigator.clipboard.writeText) {
-              navigator.clipboard.writeText(text);
-            } else {
-              inputWidget.value = text;
-            }
-          });
-
-          sp.addEventListener("click", function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-
-            const newData = db.read(key)
-              .reduce(function(acc, cur, idx, arr) {
-                if (idx !== index) {
-                  acc.push(cur);
-                } else {
-                  const arr = spreadString(text);
-                  const data = jsutl.spread(arr).map(function(items) {
-                    return items.join("");
-                  });
-
-                  acc = acc.concat(data);
-                }
-                return acc;
-              }, []);
-
-            save(key, newData)
-              .then(function() {
-                if (newData.length === 0) {
-                  db.remove(key);
-                } else {
-                  db.update(key, newData);
-                }
-                updateNode(node);
-              })
-              .catch(function(err) {
-                console.error(err);
-              });
-          });
-      
-          cg.addEventListener("click", function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-      
-            const newData = db.read(key)
-              .map(function(item, idx) {
-                return idx !== index ? item : inputWidget.value;
-              });
-      
-            save(key, newData)
-              .then(function() {
-                if (newData.length === 0) {
-                  db.remove(key);
-                } else {
-                  db.update(key, newData);
-                }
-                updateNode(node);
-              })
-              .catch(function(err) {
-                console.error(err);
-              });
-          });
-      
-          btnGroup.appendChild(cp);
-          btnGroup.appendChild(cg);
-          btnGroup.appendChild(sp);
-          btnGroup.appendChild(rm);
-      
-          header.appendChild(label);
-          header.appendChild(btnGroup);
-          previewElement.appendChild(header);
-          previewElement.appendChild(box);
-        }
+      for (let i = 0; i < values.length; i++) {
+        const item = buildItem(key, values, i);
+        previewElement.appendChild(item);
       }
     }
   }
