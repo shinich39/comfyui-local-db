@@ -28,6 +28,29 @@ function stripComments(str) {
 	return str.replace(/\/\*[\s\S]*?\*\/|\/\/.*/g,'');
 }
 
+function addPreviewWidget(node) {
+  const widgetIdx = node.widgets.findIndex(function(item) {
+    return item.name === "preview";
+  });
+
+  if (widgetIdx === -1) {
+    const previewElement = document.createElement("div");
+    previewElement.classList.add("shinich39-local-db-preview");
+    node.addDOMWidget("preview", "", previewElement);
+  }
+}
+
+function removePreviewWidget(node) {
+  const widgetIdx = node.widgets.findIndex(function(item) {
+    return item.name === "preview";
+  });
+  
+  if (widgetIdx > -1) {
+    node.widgets[widgetIdx].onRemove?.();
+    node.widgets.splice(widgetIdx, 1);
+  }
+}
+
 function parseString(str, keys) {
   if (!keys) {
     keys = db.keys.sort(function(a, b) {
@@ -168,9 +191,6 @@ app.registerExtension({
       console.log("Load DB", node);
     }
 
-    const previewElement = document.createElement("div");
-    previewElement.classList.add("shinich39-local-db-preview");
-
     const inputWidget = node.widgets.find(function(item) {
       return item.name === "input";
     });
@@ -235,15 +255,13 @@ app.registerExtension({
 
           updateNode(node);
 
-          // scroll to bottom
-          previewElement.scrollTo(0, previewElement.scrollHeight);
+          // clear input
+          inputWidget.value = "";
         })
         .catch(function(err) {
           console.error(err);
         });
     });
-
-    const previewWidget = node.addDOMWidget("preview", "", previewElement);
 
     // set node event
     node.onConnectionsChange = function() {
@@ -264,7 +282,7 @@ app.registerExtension({
     }
 
     // fix render after create clone
-    setTimeout(function() {
+    setTimeout(function() {  
       updateNode(node);
     }, 32);
   }
@@ -301,7 +319,7 @@ function updateNode(node) {
 
     const label = document.createElement("span");
     label.classList.add("shinich39-local-db-label");
-    label.innerHTML = `${countKeys} keys, ${countValues} values`;
+    label.innerHTML = `${countKeys} keys, ${countValues} values in DB`;
 
     const content = document.createElement("div");
     content.classList.add("shinich39-local-db-content");
@@ -310,22 +328,6 @@ function updateNode(node) {
     header.appendChild(label);
     wrapper.appendChild(header);
     wrapper.appendChild(content);
-    return wrapper;
-  }
-
-  function buildSeperator(key, values) {
-    const wrapper = document.createElement("div");
-    wrapper.classList.add("shinich39-local-db-wrapper");
-
-    const header = document.createElement("div");
-    header.classList.add("shinich39-local-db-header");
-
-    const label = document.createElement("span");
-    label.classList.add("shinich39-local-db-label");
-    label.innerHTML = `${values.length} results in "${key}"`;
-
-    header.appendChild(label);
-    wrapper.appendChild(header);
     return wrapper;
   }
 
@@ -402,7 +404,9 @@ function updateNode(node) {
     cp.addEventListener("click", function(e) {
       e.preventDefault();
       e.stopPropagation();
+
       inputWidget.value = value;
+
       // if (navigator && navigator.clipboard && navigator.clipboard.writeText) {
       //   navigator.clipboard.writeText(value);
       // } else {
@@ -483,6 +487,14 @@ function updateNode(node) {
     return item.name === "find";
   });
 
+  if (keyWidget) {
+    if (!keyWidget.value || keyWidget.value.trim() === "") {
+      removePreviewWidget(node);
+    } else {
+      addPreviewWidget(node);
+    }
+  }
+
   const inputWidget = node.widgets.find(function(item) {
     return item.name === "input";
   });
@@ -522,7 +534,6 @@ function updateNode(node) {
     if (keyWidget && inputWidget) {
       const key = keyWidget.value;
       const values = db.read(key);
-      // previewElement.appendChild(buildSeperator(key, values));
       for (let i = 0; i < values.length; i++) {
         const item = buildItem(key, values, i);
         previewElement.appendChild(item);
