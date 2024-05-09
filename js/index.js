@@ -518,15 +518,11 @@ function updateNode(node) {
   if (previewWidget) {
     const previewElement = previewWidget.element;
     previewElement.innerHTML = ""; // clear
-
     previewElement.appendChild(buildHeader());
-    
     if (keyWidget && inputWidget) {
       const key = keyWidget.value;
       const values = db.read(key);
-
       // previewElement.appendChild(buildSeperator(key, values));
-
       for (let i = 0; i < values.length; i++) {
         const item = buildItem(key, values, i);
         previewElement.appendChild(item);
