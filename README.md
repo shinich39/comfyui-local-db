@@ -8,17 +8,12 @@ Store text to Key-Value pair database.
 
 ### Add node > utils > Load DB
 
-Show values when enter key.
+Show values when enter key. In node textarea, **$ + key** will convert to random value in key.
 
-![image-2](./images/blur.png)
-
-Show all keys in DB when focus on textarea.
-
-![image-3](./images/focus.png)
-
-Enter to textarea $ + key.
-
-If multiple values in key, choose one randomly.
+<p>
+  <img src="./images/color.png" width="50%" title="color.png">
+  <img src="./images/default.png" width="50%" title="default.png">
+</p>
 
 ### Spread
 
