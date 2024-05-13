@@ -11,8 +11,8 @@ Store text to Key-Value pair database.
 Show values when enter key. In node textarea, **$ + key** will convert to random value in key.
 
 <p>
-  <img src="./images/color.png" width="49%" title="color.png">
-  <img src="./images/default.png" width="49%" title="default.png">
+  <img src="./images/color.png" width="33%" title="color.png">
+  <img src="./images/default.png" width="33%" title="default.png">
 </p>
 
 ### Spread
