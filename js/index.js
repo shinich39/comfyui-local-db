@@ -44,7 +44,7 @@ function removePreviewWidget(node) {
   const widgetIdx = node.widgets.findIndex(function(item) {
     return item.name === "preview";
   });
-  
+
   if (widgetIdx > -1) {
     node.widgets[widgetIdx].onRemove?.();
     node.widgets.splice(widgetIdx, 1);
@@ -257,6 +257,15 @@ app.registerExtension({
 
           // clear input
           inputWidget.value = "";
+
+          // scroll to bottom
+          const previewWidget = node.widgets.find(function(item) {
+            return item.name === "preview";
+          });
+
+          if (previewWidget && previewWidget.element) {
+            previewWidget.element.scrollTop = previewWidget.element.scrollHeight;
+          }
         })
         .catch(function(err) {
           console.error(err);
