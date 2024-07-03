@@ -6,7 +6,7 @@ Store text to Key-Value pair database.
 
 ## Usage
 
-### Add node > utils > Load DB
+### Add node > utils > Local DB
 
 Show values when enter key. In node textarea, **$ + key** will convert to random value in key.
 

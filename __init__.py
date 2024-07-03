@@ -23,25 +23,24 @@ __all__ = ["NODE_CLASS_MAPPINGS", "NODE_DISPLAY_NAME_MAPPINGS"]
 __DIRNAME = os.path.dirname(os.path.abspath(__file__))
 DB_DIRECTORY = os.path.join(__DIRNAME, "./db")
 
-@PromptServer.instance.routes.get("/shinich39/db")
+@PromptServer.instance.routes.get("/shinich39/local-db/get")
 async def get_data(request):
-  # current backup dir
-  BACKUP_DIRECTORY = os.path.join(DB_DIRECTORY, datetime.datetime.now().strftime('%Y-%m-%d'))
-
-  # backup
+  # check db directory
   if os.path.isdir(DB_DIRECTORY) == False:
     os.mkdir(DB_DIRECTORY)
-    
-  if os.path.exists(BACKUP_DIRECTORY) == False:
-    os.mkdir(BACKUP_DIRECTORY)
-    
-    for file in os.listdir(DB_DIRECTORY):
-      if file.lower().endswith(".json"):
-        src_path = os.path.join(DB_DIRECTORY, file)
-        dst_path = os.path.join(BACKUP_DIRECTORY, file)
-        shutil.copyfile(src_path, dst_path)
 
-  # read
+  # backup
+  # BACKUP_DIRECTORY = os.path.join(DB_DIRECTORY, datetime.datetime.now().strftime('%Y-%m-%d'))
+  # if os.path.exists(BACKUP_DIRECTORY) == False:
+  #   os.mkdir(BACKUP_DIRECTORY)
+    
+  #   for file in os.listdir(DB_DIRECTORY):
+  #     if file.lower().endswith(".json"):
+  #       src_path = os.path.join(DB_DIRECTORY, file)
+  #       dst_path = os.path.join(BACKUP_DIRECTORY, file)
+  #       shutil.copyfile(src_path, dst_path)
+
+  # read data
   res = {}
   for file in os.listdir(DB_DIRECTORY):
     if file.lower().endswith(".json"):
@@ -52,7 +51,7 @@ async def get_data(request):
           res[file_name] = json_data
           f.close()
 
-  # read with subdirectory
+  # read data with subdirectory
   # for root, dirs, files in os.walk(DB_DIRECTORY):
   #   for file in files:
   #     if (file.lower().endswith(".json")):
@@ -65,7 +64,7 @@ async def get_data(request):
 
   return web.json_response(res)
 
-@PromptServer.instance.routes.post("/shinich39/db")
+@PromptServer.instance.routes.post("/shinich39/local-db/set")
 async def set_data(request):
   if os.path.isdir(DB_DIRECTORY) == False:
     os.mkdir(DB_DIRECTORY)
@@ -83,7 +82,7 @@ async def set_data(request):
   return web.Response(status=200)
 
 # main  
-class LoadDB():
+class LocalDB():
   def __init__(self):
     pass
 
@@ -109,5 +108,5 @@ class LoadDB():
 
     return (text,)
 
-NODE_CLASS_MAPPINGS["Load DB"] = LoadDB
-NODE_DISPLAY_NAME_MAPPINGS["Load DB"] = "Load DB"
+NODE_CLASS_MAPPINGS["Local DB"] = LocalDB
+NODE_DISPLAY_NAME_MAPPINGS["Local DB"] = "Local DB"

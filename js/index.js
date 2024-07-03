@@ -5,6 +5,7 @@ import JSDB from "./jsdb.js";
 import jsutl from "./jsutl.js";
 
 const DEBUG = false;
+const CLASS_NAME = "Local DB";
 let isLoaded = false;
 let db = new JSDB({
   unique: false,
@@ -74,7 +75,7 @@ function parseString(str, keys) {
 
     count++;
 
-    if (count > 3939) {
+    if (count > 256) {
       throw new Error("Invalid string format.");
     }
   }
@@ -143,20 +144,20 @@ function isFocused(element) {
 }
 
 async function load() {
-  const response = await api.fetchApi("/shinich39/db", { cache: "no-store" });
+  const response = await api.fetchApi("/shinich39/local-db/get", { cache: "no-store" });
   const json = await response.json();
   
   db.import(json);
 
   if (DEBUG) {
-    console.log("GET /shinich39/db", db);
+    console.log("GET /shinich39/local-db/get", db);
   }
 
   isLoaded = true;
 }
 
 async function save(key, value) {
-  const response = await api.fetchApi("/shinich39/db", {
+  const response = await api.fetchApi("/shinich39/local-db/set", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -165,7 +166,7 @@ async function save(key, value) {
   });
 
   if (DEBUG) {
-    console.log("POST /shinich39/db", response);
+    console.log("POST /shinich39/local-db/set", response);
   }
 
   if (response.status === 200) {
@@ -183,12 +184,12 @@ app.registerExtension({
       .then(updateAllNodes);
   },
   nodeCreated(node, app) {
-    if (node.comfyClass !== "Load DB") {
+    if (node.comfyClass !== CLASS_NAME) {
       return;
     }
 
     if (DEBUG) {
-      console.log("Load DB", node);
+      console.log(CLASS_NAME, node);
     }
 
     const inputWidget = node.widgets.find(function(item) {
@@ -554,11 +555,11 @@ function updateNode(node) {
 function updateAllNodes() {
   for (const node of app.graph._nodes) {
     try {
-      if (node.comfyClass !== "Load DB") {
+      if (node.comfyClass !== CLASS_NAME) {
         continue;
       }
       if (DEBUG) {
-        console.log("Load DB", node);
+        console.log(CLASS_NAME, node);
       }
       updateNode(node);
     } catch(err) {
