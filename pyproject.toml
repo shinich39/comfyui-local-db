@@ -1,7 +1,7 @@
 [project]
 name = "comfyui-local-db"
 description = "Store text to Key-Value pair database."
-version = "1.0.0"
+version = "1.0.1"
 license = "LICENSE"
 
 [project.urls]
