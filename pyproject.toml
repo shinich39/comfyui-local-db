@@ -2,7 +2,7 @@
 name = "comfyui-local-db"
 description = "Store text to Key-Value pair database."
 version = "1.0.1"
-license = "LICENSE"
+license = { file = "LICENSE" }
 
 [project.urls]
 Repository = "https://github.com/shinich39/comfyui-local-db"
